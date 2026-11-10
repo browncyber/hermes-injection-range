@@ -1,0 +1,30 @@
+name: injection-range
+version: "0.1.0"
+manifest_version: 2
+description: >-
+  A prompt-injection fire drill for your own agent. /drill run plants documents that carry
+  test injections, gives the agent an ordinary task with each one, blocks any tool call that
+  carries a drill canary before it runs, and prints a scorecard of what the agent did.
+author: Brown Cyber Services
+license: MIT
+tags: [security, prompt-injection, testing, red-team]
+requires_hermes: ">=0.22.0"
+provides_tools: []
+provides_hooks:
+  - pre_llm_call
+  - pre_tool_call
+  - post_tool_call
+  - pre_api_request
+  - post_llm_call
+  - on_session_end
+config_schema:
+  auto_advance:
+    type: bool
+    default: true
+    label: "Advance automatically"
+    description: "Send each scenario's task for you. Turn off to step with /drill next."
+  staging_dir:
+    type: str
+    default: ""
+    label: "Staging folder"
+    description: "Where planted documents are written during a drill. Empty uses the system temp folder."
