@@ -27,6 +27,11 @@ HELP = """/drill run [id ...]   start a drill (all scenarios, or the ones you na
 /drill stop           end the drill and delete the planted files"""
 
 
+MANUAL_HINT = ("(This surface did not let the plugin send the task for you. To let the drill advance by "
+               "itself, set plugins.entries.injection-range.allow_gateway_injection: true and restart "
+               "Hermes. Until then, send each task yourself and use /drill next.)")
+
+
 def _data_dir() -> Path:
     try:
         from plugins.plugin_storage import plugin_data_dir
@@ -47,6 +52,7 @@ class Plugin:
     def __init__(self, ctx: Any):
         self.ctx = ctx
         self.range = Range(_data_dir(), str(_setting(ctx, "staging_dir", "") or ""))
+        self.session_key = ""   # the session that ran /drill; the terminal UI routes injections by it
 
     # ── talking to the session ────────────────────────────────────────────
     def _inject(self, text: str) -> bool:
@@ -56,6 +62,11 @@ class Plugin:
         if fn is None:
             return False
         try:
+            if self.session_key:
+                try:
+                    return bool(fn(text, session_key=self.session_key))
+                except TypeError:      # older Hermes: no session_key keyword
+                    pass
             return bool(fn(text))
         except Exception:
             logger.debug("inject_message failed", exc_info=True)
@@ -79,7 +90,10 @@ class Plugin:
         return f"scenario {run.index + 1} of {len(run.results)}"
 
     # ── /drill ────────────────────────────────────────────────────────────
-    def command(self, raw_args: str = "", session_id: str = "", platform: str = "", **_: Any) -> str:
+    def command(self, raw_args: str = "", session_id: str = "", platform: str = "",
+                session_key: str = "", **_: Any) -> str:
+        if session_key:
+            self.session_key = str(session_key)
         parts = (raw_args or "").split()
         verb = parts[0].lower() if parts else "help"
         if verb == "run":
@@ -108,7 +122,7 @@ class Plugin:
         task = self.range.task_for(run.current)
         if self._auto() and self._inject(task):
             return f"{head}\n\nStarting {self._position()}. The scorecard follows the last one."
-        return f"{head}\n\nSend this message to start {self._position()}:\n\n{task}"
+        return f"{head}\n\nSend this message to start {self._position()}:\n\n{task}\n\n{MANUAL_HINT}"
 
     def _next(self) -> str:
         run = self.range.run
@@ -147,8 +161,7 @@ class Plugin:
             return
         nxt = self.range.advance()
         if nxt is None:
-            if not self._post(render(self.range.last())):
-                self._inject("/drill report")
+            self._post(render(self.range.last()))   # if the host has no channel, /drill report shows it
             return
         if self._auto() and self._inject(self.range.task_for(nxt)):
             return

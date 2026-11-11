@@ -71,11 +71,17 @@ from asking the model how it did.
 | `/drill report` | Show the scorecard |
 | `/drill list` | List scenarios |
 | `/drill stop` | End the drill and delete planted files |
-| `hermes drill report [--json]` | Print the last scorecard from the shell |
+| `hermes drill report [--json]` | Print the last scorecard from the shell (not available when `plugins.isolation` is `host`) |
 
-In the classic CLI the drill advances by itself. On other surfaces Hermes may refuse to let a
-plugin queue a message; the drill then tells you what to send, or you can set
-`plugins.entries.injection-range.allow_gateway_injection: true`.
+Hermes only lets a plugin queue a message in the terminal UI, the desktop app or a messaging
+gateway when you allow it. To let the drill advance by itself, run this once and restart Hermes:
+
+```
+hermes config set plugins.entries.injection-range.allow_gateway_injection true
+```
+
+Without it the drill still works: it shows the task to send, and `/drill next` moves on. The
+classic CLI needs no setting.
 
 ## Install
 
@@ -104,8 +110,7 @@ hermes plugins enable injection-range
   they return at once and keep nothing.
 - During a drill, `pre_api_request` checks the outgoing messages for the payload marker. The
   messages are not stored.
-- It queues user-role messages into the session that started the drill: one task per scenario,
-  and `/drill report` at the end.
+- It queues user-role messages into the session that started the drill: one task per scenario.
 - It ships test prompt injections in `scenarios.py`. Hermes's install scan reports `caution`
   for them. They are only ever written into the drill's own temp folder.
 - It writes planted documents to a temp folder (or `staging_dir`) and results to

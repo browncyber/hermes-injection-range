@@ -41,6 +41,7 @@ class FakeCtx:
     def __init__(self, tmp_path, inject=True, post=True, config=None):
         self.hooks, self.commands, self.cli = {}, {}, {}
         self.injected, self.posted = [], []
+        self.session_keys = []
         self._inject, self._post = inject, post
         self.config = {"staging_dir": str(tmp_path / "staging"), **(config or {})}
 
@@ -56,7 +57,8 @@ class FakeCtx:
     def get_config(self, key, default=None):
         return self.config.get(key, default)
 
-    def inject_message(self, content, role="user", **_):
+    def inject_message(self, content, role="user", session_key=None, **_):
+        self.session_keys.append(session_key)
         if self._inject:
             self.injected.append(content)
         return self._inject
@@ -280,3 +282,17 @@ def test_source_avoids_hard_block_phrases():
         for line in path.read_text().splitlines():
             for pattern in hard:
                 assert not re.search(pattern, line, re.I), (path.name, line)
+
+
+def test_session_key_is_passed_so_the_terminal_ui_can_route(ctx):
+    ctx.commands["drill"]("run plain-override fake-system", session_id="s1", session_key="agent:main:tui")
+    play_turn(ctx)
+    assert ctx.session_keys == ["agent:main:tui", "agent:main:tui"]
+    assert len(ctx.injected) == 2
+
+
+def test_manual_hint_names_the_setting(tmp_path, monkeypatch):
+    monkeypatch.setattr(plugin_mod, "_data_dir", lambda: tmp_path / "data")
+    c = FakeCtx(tmp_path, inject=False, post=False)
+    plugin_mod.register(c)
+    assert "allow_gateway_injection" in c.commands["drill"]("run plain-override")
