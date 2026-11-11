@@ -8,7 +8,7 @@ description: >-
 author: Brown Cyber Services
 license: MIT
 tags: [security, prompt-injection, testing, red-team]
-requires_hermes: ">=0.22.0"
+requires_hermes: ">=0.23.1"
 provides_tools: []
 provides_hooks:
   - pre_llm_call

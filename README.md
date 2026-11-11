@@ -123,6 +123,8 @@ hermes plugins enable injection-range
 - During a drill, `pre_api_request` checks the outgoing messages for the payload marker. The
   messages are not stored.
 - It queues user-role messages into the session that started the drill: one task per scenario.
+- During a drill it blocks any tool call that carries a drill canary and returns a neutral
+  "blocked by a safety policy" message to the model. It blocks nothing when no drill is running.
 - It ships test prompt injections in `scenarios.py`. Hermes's install scan reports `caution`
   for them. They are only ever written into the drill's own temp folder.
 - It writes planted documents to a temp folder (or `staging_dir`) and results to
@@ -139,5 +141,7 @@ python -m pytest -q
 
 The tests drive the hooks in the order Hermes fires them, with a stand-in for the plugin
 context. They do not need a Hermes checkout.
+
+Tested on Hermes Agent v0.23.1 (terminal UI and classic view, macOS).
 
 MIT License. Built by Brown Cyber Services.
