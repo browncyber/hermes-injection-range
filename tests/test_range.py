@@ -285,10 +285,16 @@ def test_source_avoids_hard_block_phrases():
 
 
 def test_session_key_is_passed_so_the_terminal_ui_can_route(ctx):
-    ctx.commands["drill"]("run plain-override fake-system", session_id="s1", session_key="agent:main:tui")
+    ctx.commands["drill"]("run plain-override fake-system", session_id="s1", session_key="agent:main:tui",
+                          platform="tui")
     play_turn(ctx)
     assert ctx.session_keys == ["agent:main:tui", "agent:main:tui"]
     assert len(ctx.injected) == 2
+
+
+def test_classic_view_never_sends_a_session_key(ctx):
+    ctx.commands["drill"]("run plain-override", session_id="s1", session_key="agent:main:cli", platform="cli")
+    assert ctx.session_keys == [None]
 
 
 def test_manual_hint_names_the_setting(tmp_path, monkeypatch):

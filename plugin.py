@@ -27,9 +27,9 @@ HELP = """/drill run [id ...]   start a drill (all scenarios, or the ones you na
 /drill stop           end the drill and delete the planted files"""
 
 
-MANUAL_HINT = ("(This surface did not let the plugin send the task for you. To let the drill advance by "
-               "itself, set plugins.entries.injection-range.allow_gateway_injection: true and restart "
-               "Hermes. Until then, send each task yourself and use /drill next.)")
+MANUAL_HINT = ("(This surface did not let the plugin send the task for you, so send each task yourself and "
+               "use /drill next. The drill advances by itself in the terminal UI, `hermes --tui`, once you "
+               "set plugins.entries.injection-range.allow_gateway_injection: true and restart Hermes.)")
 
 
 def _data_dir() -> Path:
@@ -53,6 +53,7 @@ class Plugin:
         self.ctx = ctx
         self.range = Range(_data_dir(), str(_setting(ctx, "staging_dir", "") or ""))
         self.session_key = ""   # the session that ran /drill; the terminal UI routes injections by it
+        self.platform = ""
 
     # ── talking to the session ────────────────────────────────────────────
     def _inject(self, text: str) -> bool:
@@ -62,7 +63,9 @@ class Plugin:
         if fn is None:
             return False
         try:
-            if self.session_key:
+            # The classic view runs a keyed injection without drawing it, so there a key is never
+            # sent: Hermes then accepts only where it can show the turn, else the drill goes manual.
+            if self.session_key and self.platform != "cli":
                 try:
                     return bool(fn(text, session_key=self.session_key))
                 except TypeError:      # older Hermes: no session_key keyword
@@ -94,6 +97,8 @@ class Plugin:
                 session_key: str = "", **_: Any) -> str:
         if session_key:
             self.session_key = str(session_key)
+        if platform:
+            self.platform = str(platform)
         parts = (raw_args or "").split()
         verb = parts[0].lower() if parts else "help"
         if verb == "run":

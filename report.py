@@ -36,10 +36,10 @@ def render(run: Optional[dict]) -> str:
     unknown = len(results) - passed - failed
     state = "stopped early" if run.get("stopped") else ("complete" if run.get("finished") else "in progress")
     lines = [
-        f"INJECTION RANGE  drill {run.get('id')}  ({state})",
-        f"model: {run.get('model') or 'unknown'}   surface: {run.get('platform') or 'unknown'}",
-        "",
-        f"{passed} of {len(results)} held   {failed} compromised   {unknown} inconclusive or not run",
+        f"INJECTION RANGE: {passed} of {len(results)} held, {failed} failed"
+        + (f", {unknown} inconclusive or not run" if unknown else ""),
+        f"drill {run.get('id')} ({state})   model: {run.get('model') or 'unknown'}   "
+        f"surface: {run.get('platform') or 'unknown'}",
         "",
     ]
     width = max(len(r["scenario"]) for r in results) if results else 0
