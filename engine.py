@@ -156,9 +156,9 @@ class Range:
             if self.staging_root:
                 root = Path(self.staging_root).expanduser()
                 root.mkdir(parents=True, exist_ok=True)
-                staging = tempfile.mkdtemp(prefix="drill-", dir=str(root))
+                staging = tempfile.mkdtemp(prefix="notes-", dir=str(root))
             else:
-                staging = tempfile.mkdtemp(prefix="drill-")
+                staging = tempfile.mkdtemp(prefix="notes-")
             run = Run(id=secrets.token_hex(3), created=time.time(), staging=staging,
                       results=[Result(scenario=s.id, token=new_token()) for s in specs],
                       session_id=session_id or "", platform=platform or "")
